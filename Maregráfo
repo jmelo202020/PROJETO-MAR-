@@ -1,0 +1,111 @@
+//Programação do Marégrafo
+
+#include <ESP8266HTTPClient.h>
+#include <ESP8266WiFi.h>
+#include <ESP8266WiFiAP.h>
+#include <ESP8266WiFiGeneric.h>
+#include <ESP8266WiFiMulti.h>
+#include <ESP8266WiFiScan.h>
+#include <ESP8266WiFiSTA.h>
+#include <ESP8266WiFiType.h>
+#include <WiFiClient.h>
+#include <WiFiClientSecure.h>
+#include <WiFiServer.h>
+#include <WiFiUdp.h>
+#include <DHT.h>
+
+const char* WIFI_SSID = "LOGIN DA INTERNET";
+const char* WIFI_PASSWORD = "SENHA DA INTERNET";
+
+#define DHTPIN 0 // D3 pino que estamos conectado
+#define DHTTYPE DHT11 // DHT 11
+DHT dht(DHTPIN, DHTTYPE);
+
+//Declara uma variável para utilizar o HttpClient
+HTTPClient http; 
+
+// Define Variavéis
+long duration;
+int distance;
+
+String temperatura;
+String umidade;
+String altura;
+int i;
+
+// Define quais pinos serão usados no HRS04
+const int trigPin = 4;  //D2
+const int echoPin = 5;  //D1
+
+// Rota da API, ou seja, endereço
+String rota = "COLOCAR O ENDEREÇO DO SITE CRIADO";
+
+void setup() {
+     pinMode(trigPin, OUTPUT); // Declara o trigPin como Output
+  pinMode(echoPin, INPUT); // Declara o echoPin como Input
+  Serial.begin(115200); 
+  dht.begin();
+  
+for(i = 0; i < 10; i++){
+    // tenta conectar na rede
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.print("connecting");
+  
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(500);
+  }
+   
+  Serial.println();
+  Serial.print("connected: ");
+
+
+      digitalWrite(trigPin, LOW);
+      delayMicroseconds(2);
+      digitalWrite(trigPin, HIGH);
+      delayMicroseconds(10);
+      digitalWrite(trigPin, LOW);
+      duration = pulseIn(echoPin, HIGH);
+      
+      // Calculando o valor da distância
+      distance = duration*0.034/2;
+      
+      //Declara as variaveis do senso DHT11
+      float h = dht.readHumidity();
+      float t = dht.readTemperature();
+      
+      // Envia o valor de Umidade
+      umidade = rota + "umidade&valor="+String(h);
+      //Serial.print(umidade);
+      http.begin(umidade);
+      http.GET(); 
+      http.end();
+      
+      // Envia o valor de Temperatura
+      temperatura = rota + "temperatura&valor="+String(t);
+      http.begin(temperatura);
+      http.GET(); 
+      http.end();
+      
+      // Envia o valor de Altura
+      altura = rota + "altura&valor="+String(t);
+      http.begin(altura);
+      http.GET(); 
+      http.end();
+      
+      // Demonstra o valor da altura, Umidade e Temperatura no monitor serial
+        Serial.print("Altura: ");
+        Serial.print(distance);
+        Serial.println("cm");
+         Serial.print("Umidade: ");
+          Serial.print(h);
+          Serial.print("%");
+          Serial.print("  Temperatura: ");
+          Serial.print(t);
+          Serial.println("°C");
+      delay(10000);
+    }
+
+}
+void loop() {
+}
